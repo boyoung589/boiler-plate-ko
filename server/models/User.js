@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const jwt = require('jsonwebtoken');
 
 
 const userSchema = mongoose.Schema({
@@ -50,7 +51,7 @@ userSchema.pre('save', function(next){
     //salt를 이용해서 비밀번호를 암호화해야함
     //=> salt생성해야함
     //saltRounds는 salt가 몇글자인지 정해주는 것 
-    const user = this; //위 userSchema의 내용을 가져온다
+    let user = this; //위 userSchema의 내용을 가져온다
     if(user.isModified('password')){
         //패스워드가 변환될 때만 아래 암호화 함수가 실행되게 함
         //이 부분을 설정해주지 않으면 이름, 이메일등 다른 데이터를 변경해서 
@@ -84,6 +85,55 @@ userSchema.pre('save', function(next){
     }
     
 })
+
+userSchema.methods.comparePassword = function(plainPassword, cb){
+
+    bcrypt.compare(plainPassword, this.password, function(err, isMatch){
+        if(err){
+            return cb(err);
+        }
+        cb(null, isMatch);
+    })
+}
+
+userSchema.methods.generateToken = function(cb) {
+    //jsonwebtoken을 이용해서 token을 생성하기
+    let user = this;
+    console.log("유저아이디",user._id)
+    //유저아이디 new ObjectId("61c35704807db261052986b8")
+    console.log("유저아이디 투스트링", user._id.toString())
+    // 유저아이디 투스트링 61c35704807db261052986b8
+    console.log("유저아이디 투 핵스스트링!!", user._id.toHexString())
+    // 유저아이디 투 핵스스트링!! 61c35704807db261052986b8
+
+    const token = jwt.sign(user._id.toHexString(),'secretToken')
+    
+    // user._id + 'secreteToken' = token
+    user.token = token;
+    user.save(function(err, user){
+        if(err) return cb(err);
+        cb(null, user);
+    })
+}
+
+userSchema.statics.findByToken = function(token, cb){
+    let user = this;
+    //토큰을 디코드 한다
+    // user._id + '' = token
+
+    jwt.verify(token, 'secretToken', function(err,decoded){
+        //유저 아이디를 이용해서 유저를 찾은 다음
+        //클라이언트에서 가져온 토큰과 db에 보관된 토큰이 일치하는지 확인
+
+        user.findOne({"_id": decoded, "token": token}, function(err, user){
+            if(err) return cb(err);
+            cb(null, user)
+        })
+    })
+}
+
+
+
 
 const User = mongoose.model('User', userSchema) 
 //모델의 이름과 스키마를 이용해서 모델을 변수처럼 설정
