@@ -1,8 +1,8 @@
-import './App.css';
+import React from "react";
 import {
   BrowserRouter as Router,
   Route,
-  Link,
+  // Link,
   Routes
 } from "react-router-dom";
 //react-router-dom version 6부턴 Switch를 지원하지 않음.

@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const port = 5000;
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const cookiparser = require('cookie-parser');
 const { User } = require('./models/User');
 const config = require('./config/key');
@@ -13,6 +14,12 @@ app.use(bodyParser.urlencoded({extended: true}));
 //application/json 인 데이터를 분석해서 가져올 수있게 함
 app.use(bodyParser.json());
 app.use(cookiparser());
+app.use(
+    cors({
+        origin: 'http://localhost:3000',
+        credentials: true,
+    })
+)
 
 
 const mongoose = require('mongoose');
@@ -27,6 +34,10 @@ mongoose.connect(config.mongoURI)
 
 
 app.get('/', (req,res) => res.send("안녕 세상"))
+
+app.get('/api/hello', (req, res) => {
+    res.send('안녕하세요!!!!!!!!!!!!!!!!')
+})
 
 
 app.post('/api/users/register', (req, res) => {
